@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/POA_2021_AUST_GDA94_1.js"></script>
+        <script src="data/BIGWSTORELIST_2.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-39.26334896909032,142.68397963068628],[-27.728790353662248,160.95325190288077]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    var img = popup._contentNode.querySelector('td img');
+                    if (img) {
+                        // If already loaded (cache), update immediately
+                        if (img.complete && img.naturalHeight > 0) {
+                            popup.update();
+                        } else {
+                            img.addEventListener('load', function() {
+                                popup.update();
+                            });
+                            img.addEventListener('error', function() {
+                                popup.update();
+                            });
+                        }
+                    }
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_CartoDBLightAll_0');
+        map.getPane('pane_CartoDBLightAll_0').style.zIndex = 400;
+        var layer_CartoDBLightAll_0 = L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            pane: 'pane_CartoDBLightAll_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+        });
+        layer_CartoDBLightAll_0;
+        map.addLayer(layer_CartoDBLightAll_0);
+        function pop_POA_2021_AUST_GDA94_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="POA_CODE21" colspan="2"><strong>POA_CODE21</strong><br />' + (feature.properties['POA_CODE21'] !== null ? autolinker.link(String(feature.properties['POA_CODE21']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['POA_NAME21'] !== null ? autolinker.link(String(feature.properties['POA_NAME21']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUS_CODE21'] !== null ? autolinker.link(String(feature.properties['AUS_CODE21']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUS_NAME21'] !== null ? autolinker.link(String(feature.properties['AUS_NAME21']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AREASQKM21'] !== null ? autolinker.link(String(feature.properties['AREASQKM21']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LOCI_URI21'] !== null ? autolinker.link(String(feature.properties['LOCI_URI21']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? autolinker.link(String(feature.properties['SHAPE_Leng']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? autolinker.link(String(feature.properties['SHAPE_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_Members'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_Members']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_Country'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_Country']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_Latitude'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_Latitude']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_Longitude'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_Longitude']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_STATE'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_STATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_Postcode AU'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_Postcode AU']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_StateFullName'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_StateFullName']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_StateMin'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_StateMin']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_State Max'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_State Max']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BIG W Sales Data_State Normalised'] !== null ? autolinker.link(String(feature.properties['BIG W Sales Data_State Normalised']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_POA_2021_AUST_GDA94_1_0(feature) {
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.000000 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.014357 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,251,255,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.014357 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.029583 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(223,236,247,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.029583 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.048180 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,220,240,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.048180 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.071000 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(163,204,227,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.071000 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.096370 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.096370 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.143740 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(74,151,201,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.143740 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.209737 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,121,185,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.209737 && feature.properties['BIG W Sales Data_State Normalised'] <= 0.371170 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(13,88,161,0.35)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['BIG W Sales Data_State Normalised'] >= 0.371170 && feature.properties['BIG W Sales Data_State Normalised'] <= 1.000000 ) {
+                return {
+                pane: 'pane_POA_2021_AUST_GDA94_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.35)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,48,107,0.35)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_POA_2021_AUST_GDA94_1');
+        map.getPane('pane_POA_2021_AUST_GDA94_1').style.zIndex = 401;
+        map.getPane('pane_POA_2021_AUST_GDA94_1').style['mix-blend-mode'] = 'normal';
+        var layer_POA_2021_AUST_GDA94_1 = new L.geoJson(json_POA_2021_AUST_GDA94_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_POA_2021_AUST_GDA94_1',
+            layerName: 'layer_POA_2021_AUST_GDA94_1',
+            pane: 'pane_POA_2021_AUST_GDA94_1',
+            onEachFeature: pop_POA_2021_AUST_GDA94_1,
+            style: style_POA_2021_AUST_GDA94_1_0,
+        });
+        bounds_group.addLayer(layer_POA_2021_AUST_GDA94_1);
+        map.addLayer(layer_POA_2021_AUST_GDA94_1);
+        function pop_BIGWSTORELIST_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Store'] !== null ? autolinker.link(String(feature.properties['Store']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Geo'] !== null ? autolinker.link(String(feature.properties['Geo']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['State'] !== null ? autolinker.link(String(feature.properties['State']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Lat_Num'] !== null ? autolinker.link(String(feature.properties['Lat_Num']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Long_Num'] !== null ? autolinker.link(String(feature.properties['Long_Num']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_BIGWSTORELIST_2_0() {
+            return {
+                pane: 'pane_BIGWSTORELIST_2',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'markers/BIGWSTORELIST_2.svg',
+            iconSize: [15.2, 15.2]
+        }),
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BIGWSTORELIST_2');
+        map.getPane('pane_BIGWSTORELIST_2').style.zIndex = 402;
+        map.getPane('pane_BIGWSTORELIST_2').style['mix-blend-mode'] = 'normal';
+        var layer_BIGWSTORELIST_2 = new L.geoJson(json_BIGWSTORELIST_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BIGWSTORELIST_2',
+            layerName: 'layer_BIGWSTORELIST_2',
+            pane: 'pane_BIGWSTORELIST_2',
+            onEachFeature: pop_BIGWSTORELIST_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_BIGWSTORELIST_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_BIGWSTORELIST_2);
+        map.addLayer(layer_BIGWSTORELIST_2);
+        var overlaysTree = [
+            {label: '<img src="legend/BIGWSTORELIST_2.png" /> BIG W STORE LIST', layer: layer_BIGWSTORELIST_2},
+        {label: '<b>BIG W DENSITY</b>',  selectAllCheckbox: true, children: [
+            {label: 'POA_2021_AUST_GDA94<br /><table><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_000140.png" /></td><td>0 - 0.014</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_00140031.png" /></td><td>0.014 - 0.03</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_00300482.png" /></td><td>0.03 - 0.048</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_004800713.png" /></td><td>0.048 - 0.071</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_007100964.png" /></td><td>0.071 - 0.096</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_009601445.png" /></td><td>0.096 - 0.144</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_01440216.png" /></td><td>0.144 - 0.21</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_02103717.png" /></td><td>0.21 - 0.371</td></tr><tr><td style="text-align: center;"><img src="legend/POA_2021_AUST_GDA94_1_037118.png" /></td><td>0.371 - 1</td></tr></table>', layer: layer_POA_2021_AUST_GDA94_1},]},
+        {label: '<b>Base Maps</b>', collapsed: true, selectAllCheckbox: true, children: [
+            {label: "CartoDB Light (All)", layer: layer_CartoDBLightAll_0},]},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        </script>        
+    </body>
+</html>
